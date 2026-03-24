@@ -76,9 +76,9 @@ export default function BottomTabBar() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] bg-[#0a0a0f]/95 backdrop-blur-xl">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] bg-[#0a0a0f]/95 backdrop-blur-xl" style={{ paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
       <div className="mx-auto max-w-[640px]">
-        <div className="flex items-center justify-around h-16 px-2">
+        <div className="flex items-center justify-around h-[72px] px-2">
           {tabs.map((tab) => {
             const active = isActive(tab.href);
             const count = tab.countKey ? counts[tab.countKey] : 0;
