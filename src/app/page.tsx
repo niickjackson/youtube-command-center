@@ -1,112 +1,145 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Nav from '@/components/Nav';
-import Link from 'next/link';
+import StatusBadge from '@/components/StatusBadge';
+import type { StoryLead } from '@/lib/types';
 
-interface Stats {
-  leads: { pending: number; approved: number; denied: number; total: number };
-  scripts: { writing: number; draft: number; final: number; exported: number; total: number };
-}
+const categoryColors: Record<string, string> = {
+  Space: 'text-cyan-accent',
+  Science: 'text-emerald-400',
+  Tech: 'text-blue-400',
+  Ocean: 'text-blue-300',
+  Archaeology: 'text-amber-400',
+  History: 'text-gold-accent',
+};
 
-export default function Dashboard() {
-  const [stats, setStats] = useState<Stats | null>(null);
+const criteriaLabels: Record<string, string> = {
+  wait_what: 'Wait, what?',
+  learned_something: 'Learned something',
+  need_to_know: 'Need to know',
+};
+
+export default function PendingPage() {
+  const [leads, setLeads] = useState<StoryLead[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/analytics').then(r => r.json()).then(setStats);
+    fetchLeads();
   }, []);
 
-  return (
-    <>
-      <Nav />
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">
-            <span className="text-cyan-accent">Mission</span> Control
-          </h1>
-          <p className="text-white/40 mt-1">YouTube Long-Form Content Pipeline</p>
-        </div>
+  function fetchLeads() {
+    setLoading(true);
+    fetch('/api/leads?status=pending')
+      .then(r => r.json())
+      .then(data => { setLeads(data); setLoading(false); });
+  }
 
-        {!stats ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="glass-card p-6 animate-pulse">
-                <div className="h-4 bg-white/5 rounded w-1/2 mb-3" />
-                <div className="h-8 bg-white/5 rounded w-1/3" />
-              </div>
-            ))}
+  async function updateStatus(id: string, status: 'approved' | 'denied') {
+    await fetch(`/api/leads/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    setLeads(prev => prev.filter(l => l.id !== id));
+  }
+
+  return (
+    <div className="app-container">
+      <div className="px-4 pt-6 pb-4">
+        <h1 className="text-2xl font-bold tracking-tight">
+          <span className="text-cyan-accent">Pending</span> Review
+        </h1>
+        <p className="text-white/40 text-sm mt-1">{leads.length} leads awaiting review</p>
+      </div>
+
+      <div className="px-4 pb-24 space-y-3">
+        {loading ? (
+          [...Array(3)].map((_, i) => (
+            <div key={i} className="glass-card p-5 animate-pulse">
+              <div className="h-5 bg-white/5 rounded w-3/4 mb-3" />
+              <div className="h-4 bg-white/5 rounded w-full mb-2" />
+              <div className="h-4 bg-white/5 rounded w-2/3" />
+            </div>
+          ))
+        ) : leads.length === 0 ? (
+          <div className="glass-card p-12 text-center">
+            <div className="text-4xl mb-3 opacity-30">&#128229;</div>
+            <p className="text-white/30">No pending leads</p>
+            <p className="text-white/20 text-sm mt-1">All caught up!</p>
           </div>
         ) : (
-          <>
-            {/* Lead Stats */}
-            <div className="mb-6">
-              <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">Story Leads</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatCard label="In Queue" value={stats.leads.pending} color="text-gold-accent" />
-                <StatCard label="Approved" value={stats.leads.approved} color="text-emerald-400" />
-                <StatCard label="Denied" value={stats.leads.denied} color="text-red-400" />
-                <StatCard label="Total Leads" value={stats.leads.total} color="text-white" />
+          leads.map(lead => (
+            <div key={lead.id} className="glass-card p-5">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-semibold text-white leading-tight">{lead.title}</h3>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className={`text-xs font-medium ${categoryColors[lead.category] || 'text-white/60'}`}>
+                      {lead.category}
+                    </span>
+                    <span className="text-white/20">&#8226;</span>
+                    <span className="text-xs text-white/40">Tier {lead.tier}</span>
+                    <StatusBadge status={lead.status} />
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-sm text-white/60 leading-relaxed mb-3 line-clamp-3">
+                {lead.summary}
+              </p>
+
+              {lead.hookAngle && (
+                <div className="mb-3">
+                  <span className="text-xs font-medium text-gold-accent">Hook: </span>
+                  <span className="text-xs text-white/50">{lead.hookAngle}</span>
+                </div>
+              )}
+
+              {lead.criteriaMet.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {lead.criteriaMet.map(c => (
+                    <span key={c} className="text-xs px-2 py-0.5 rounded-full bg-cyan-accent/10 text-cyan-accent/70 border border-cyan-accent/20">
+                      {criteriaLabels[c] || c}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {lead.sources.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-xs text-white/30 mb-1">Sources:</p>
+                  {lead.sources.map((s, i) => (
+                    <a
+                      key={i}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-xs text-cyan-accent/60 hover:text-cyan-accent truncate"
+                    >
+                      {s.publisher}: {s.headline}
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-3 border-t border-white/[0.06]">
+                <button
+                  onClick={() => updateStatus(lead.id, 'approved')}
+                  className="flex-1 px-3 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/20 active:scale-[0.98] transition-all border border-emerald-500/20"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() => updateStatus(lead.id, 'denied')}
+                  className="flex-1 px-3 py-2.5 rounded-xl bg-red-500/10 text-red-400 text-sm font-semibold hover:bg-red-500/20 active:scale-[0.98] transition-all border border-red-500/20"
+                >
+                  Deny
+                </button>
               </div>
             </div>
-
-            {/* Script Stats */}
-            <div className="mb-8">
-              <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">Scripts</h2>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <StatCard label="Writing" value={stats.scripts.writing} color="text-blue-400" />
-                <StatCard label="Draft" value={stats.scripts.draft} color="text-purple-400" />
-                <StatCard label="Final" value={stats.scripts.final} color="text-cyan-accent" />
-                <StatCard label="Exported" value={stats.scripts.exported} color="text-emerald-400" />
-                <StatCard label="Total Scripts" value={stats.scripts.total} color="text-white" />
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Link href="/leads" className="glass-card p-6 group cursor-pointer">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white group-hover:text-cyan-accent transition-colors">
-                      Review Story Leads
-                    </h3>
-                    <p className="text-white/40 text-sm mt-1">
-                      {stats.leads.pending} leads waiting for review
-                    </p>
-                  </div>
-                  <svg className="h-5 w-5 text-white/20 group-hover:text-cyan-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </Link>
-
-              <Link href="/scripts" className="glass-card p-6 group cursor-pointer">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white group-hover:text-cyan-accent transition-colors">
-                      View Scripts
-                    </h3>
-                    <p className="text-white/40 text-sm mt-1">
-                      {stats.scripts.writing + stats.scripts.draft} scripts in progress
-                    </p>
-                  </div>
-                  <svg className="h-5 w-5 text-white/20 group-hover:text-cyan-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </Link>
-            </div>
-          </>
+          ))
         )}
-      </main>
-    </>
-  );
-}
-
-function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="glass-card p-5">
-      <p className="text-xs font-medium text-white/40 uppercase tracking-wider">{label}</p>
-      <p className={`text-3xl font-bold mt-1 ${color}`}>{value}</p>
+      </div>
     </div>
   );
 }
