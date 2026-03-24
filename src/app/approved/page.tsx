@@ -85,16 +85,14 @@ export default function ApprovedPage() {
               <div className="h-4 bg-white/5 rounded w-1/2" />
             </div>
           ))
-        ) : leads.length === 0 ? (
+        ) : leads.filter(l => !getScriptForLead(l.id)).length === 0 ? (
           <div className="glass-card p-12 text-center">
             <div className="text-4xl mb-3 opacity-30">&#9989;</div>
-            <p className="text-white/30">No approved leads yet</p>
+            <p className="text-white/30">{leads.length > 0 ? 'All approved leads have scripts — check the Scripts tab!' : 'No approved leads yet'}</p>
           </div>
         ) : (
-          leads.map(lead => {
-            const script = getScriptForLead(lead.id);
-            const isWriting = script?.status === 'writing' || writingLeadIds.has(lead.id);
-            const hasScript = script && script.status !== 'writing';
+          leads.filter(l => !getScriptForLead(l.id)).map(lead => {
+            const isWriting = writingLeadIds.has(lead.id);
 
             return (
               <div key={lead.id} className="glass-card p-5">
@@ -121,13 +119,6 @@ export default function ApprovedPage() {
                       <div className="w-2 h-2 rounded-full bg-cyan-accent animate-pulse" />
                       <span className="text-xs font-medium text-cyan-accent animate-pulse">
                         Writing script...
-                      </span>
-                    </div>
-                  ) : hasScript ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                      <span className="text-xs font-medium text-emerald-400">
-                        Script {script.status === 'filmed' ? 'Filmed' : 'Ready'}
                       </span>
                     </div>
                   ) : (
