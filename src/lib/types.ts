@@ -51,7 +51,7 @@ export interface Script {
   id: string;
   storyLeadId: string | null;
   title: string;
-  status: 'writing' | 'draft' | 'final' | 'exported';
+  status: 'writing' | 'ready' | 'filmed';
   titleOptions: TitleOption[];
   thumbnailDirection: ThumbnailDirection;
   wordCount: number;

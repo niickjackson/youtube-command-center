@@ -6,7 +6,7 @@ import type { StoryLead } from '@/lib/types';
 
 interface Stats {
   leads: { pending: number; approved: number; denied: number; total: number };
-  scripts: { writing: number; draft: number; final: number; exported: number; total: number };
+  scripts: { writing: number; ready: number; filmed: number; total: number };
 }
 
 export default function MorePage() {
@@ -90,10 +90,9 @@ export default function MorePage() {
         <div className="glass-card p-4">
           <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">Script Pipeline</h3>
           <div className="space-y-2.5">
-            <StatusRow label="Writing" value={stats.scripts.writing} color="bg-blue-400" total={stats.scripts.total} />
-            <StatusRow label="Draft" value={stats.scripts.draft} color="bg-purple-400" total={stats.scripts.total} />
-            <StatusRow label="Final" value={stats.scripts.final} color="bg-cyan-accent" total={stats.scripts.total} />
-            <StatusRow label="Exported" value={stats.scripts.exported} color="bg-emerald-400" total={stats.scripts.total} />
+            <StatusRow label="Writing" value={stats.scripts.writing} color="bg-cyan-accent" total={stats.scripts.total} />
+            <StatusRow label="Ready" value={stats.scripts.ready} color="bg-blue-400" total={stats.scripts.total} />
+            <StatusRow label="Filmed" value={stats.scripts.filmed} color="bg-emerald-400" total={stats.scripts.total} />
           </div>
         </div>
 

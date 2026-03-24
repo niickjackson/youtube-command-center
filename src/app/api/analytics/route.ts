@@ -14,13 +14,12 @@ export async function GET() {
   const leadsTotal = ((await db.execute({ sql: "SELECT COUNT(*) as count FROM story_leads", args: [] })).rows[0] as unknown as CountRow).count;
 
   const scriptsWriting = ((await db.execute({ sql: "SELECT COUNT(*) as count FROM scripts WHERE status = 'writing'", args: [] })).rows[0] as unknown as CountRow).count;
-  const scriptsDraft = ((await db.execute({ sql: "SELECT COUNT(*) as count FROM scripts WHERE status = 'draft'", args: [] })).rows[0] as unknown as CountRow).count;
-  const scriptsFinal = ((await db.execute({ sql: "SELECT COUNT(*) as count FROM scripts WHERE status = 'final'", args: [] })).rows[0] as unknown as CountRow).count;
-  const scriptsExported = ((await db.execute({ sql: "SELECT COUNT(*) as count FROM scripts WHERE status = 'exported'", args: [] })).rows[0] as unknown as CountRow).count;
+  const scriptsReady = ((await db.execute({ sql: "SELECT COUNT(*) as count FROM scripts WHERE status = 'ready'", args: [] })).rows[0] as unknown as CountRow).count;
+  const scriptsFilmed = ((await db.execute({ sql: "SELECT COUNT(*) as count FROM scripts WHERE status = 'filmed'", args: [] })).rows[0] as unknown as CountRow).count;
   const scriptsTotal = ((await db.execute({ sql: "SELECT COUNT(*) as count FROM scripts", args: [] })).rows[0] as unknown as CountRow).count;
 
   return NextResponse.json({
     leads: { pending: leadsPending, approved: leadsApproved, denied: leadsDenied, total: leadsTotal },
-    scripts: { writing: scriptsWriting, draft: scriptsDraft, final: scriptsFinal, exported: scriptsExported, total: scriptsTotal },
+    scripts: { writing: scriptsWriting, ready: scriptsReady, filmed: scriptsFilmed, total: scriptsTotal },
   });
 }

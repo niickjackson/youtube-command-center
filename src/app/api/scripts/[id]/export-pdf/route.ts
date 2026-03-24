@@ -19,8 +19,8 @@ export async function POST(
   const script = rowToScript(row);
   const pdfBuffer = generatePDF(script);
 
-  // Update status to exported
-  await db.execute({ sql: "UPDATE scripts SET status = 'exported', exported_at = datetime('now'), updated_at = datetime('now') WHERE id = ?", args: [id] });
+  // Record export timestamp
+  await db.execute({ sql: "UPDATE scripts SET exported_at = datetime('now'), updated_at = datetime('now') WHERE id = ?", args: [id] });
 
   return new NextResponse(new Uint8Array(pdfBuffer), {
     headers: {

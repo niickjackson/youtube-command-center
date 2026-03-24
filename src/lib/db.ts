@@ -42,6 +42,12 @@ export async function getDb() {
         exported_at TEXT
       );
     `);
+    // Migrate old statuses to new ones
+    await db.executeMultiple(`
+      UPDATE scripts SET status = 'ready' WHERE status IN ('draft', 'final');
+      UPDATE scripts SET status = 'ready' WHERE status = 'exported' AND chapters != '[]';
+    `);
+
     initialized = true;
   }
   return db;

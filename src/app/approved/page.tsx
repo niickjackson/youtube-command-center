@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { StoryLead, Script } from '@/lib/types';
 
 const categoryColors: Record<string, string> = {
@@ -16,8 +16,9 @@ export default function ApprovedPage() {
   const [leads, setLeads] = useState<StoryLead[]>([]);
   const [scripts, setScripts] = useState<Script[]>([]);
   const [loading, setLoading] = useState(true);
+  const [writingLeadIds, setWritingLeadIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     Promise.all([
       fetch('/api/leads?status=approved').then(r => r.json()),
       fetch('/api/scripts').then(r => r.json()),
@@ -28,14 +29,43 @@ export default function ApprovedPage() {
     });
   }, []);
 
-  function getScriptStatus(leadId: string): { label: string; color: string } {
-    const script = scripts.find(s => s.storyLeadId === leadId);
-    if (!script) return { label: 'Awaiting Script', color: 'text-white/30' };
-    if (script.status === 'writing') return { label: 'Script In Progress', color: 'text-blue-400' };
-    if (script.status === 'draft') return { label: 'Draft Ready', color: 'text-purple-400' };
-    if (script.status === 'final') return { label: 'Script Final', color: 'text-cyan-accent' };
-    if (script.status === 'exported') return { label: 'Exported', color: 'text-emerald-400' };
-    return { label: 'Awaiting Script', color: 'text-white/30' };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Poll for script completion when any scripts are writing
+  useEffect(() => {
+    const hasWriting = scripts.some(s => s.status === 'writing') || writingLeadIds.size > 0;
+    if (!hasWriting) return;
+
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, [scripts, writingLeadIds, fetchData]);
+
+  function getScriptForLead(leadId: string): Script | undefined {
+    return scripts.find(s => s.storyLeadId === leadId);
+  }
+
+  async function handleWriteScript(lead: StoryLead) {
+    setWritingLeadIds(prev => new Set(prev).add(lead.id));
+
+    try {
+      const res = await fetch('/api/scripts/write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storyLeadId: lead.id }),
+      });
+
+      if (res.ok) {
+        fetchData();
+      }
+    } catch {
+      setWritingLeadIds(prev => {
+        const next = new Set(prev);
+        next.delete(lead.id);
+        return next;
+      });
+    }
   }
 
   return (
@@ -62,7 +92,10 @@ export default function ApprovedPage() {
           </div>
         ) : (
           leads.map(lead => {
-            const scriptStatus = getScriptStatus(lead.id);
+            const script = getScriptForLead(lead.id);
+            const isWriting = script?.status === 'writing' || writingLeadIds.has(lead.id);
+            const hasScript = script && script.status !== 'writing';
+
             return (
               <div key={lead.id} className="glass-card p-5">
                 <div className="flex items-start justify-between mb-2">
@@ -82,17 +115,29 @@ export default function ApprovedPage() {
                   {lead.summary}
                 </p>
 
-                <div className="flex items-center gap-2 pt-3 border-t border-white/[0.06]">
-                  <div className={`w-2 h-2 rounded-full ${
-                    scriptStatus.label === 'Awaiting Script' ? 'bg-white/20' :
-                    scriptStatus.label === 'Script In Progress' ? 'bg-blue-400 animate-pulse' :
-                    scriptStatus.label === 'Draft Ready' ? 'bg-purple-400' :
-                    scriptStatus.label === 'Script Final' ? 'bg-cyan-accent' :
-                    'bg-emerald-400'
-                  }`} />
-                  <span className={`text-xs font-medium ${scriptStatus.color}`}>
-                    {scriptStatus.label}
-                  </span>
+                <div className="pt-3 border-t border-white/[0.06]">
+                  {isWriting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-cyan-accent animate-pulse" />
+                      <span className="text-xs font-medium text-cyan-accent animate-pulse">
+                        Writing script...
+                      </span>
+                    </div>
+                  ) : hasScript ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span className="text-xs font-medium text-emerald-400">
+                        Script {script.status === 'filmed' ? 'Filmed' : 'Ready'}
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleWriteScript(lead)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-cyan-accent text-space-black text-sm font-bold hover:bg-cyan-accent/90 active:scale-[0.98] transition-all cyan-glow"
+                    >
+                      Write Script
+                    </button>
+                  )}
                 </div>
               </div>
             );

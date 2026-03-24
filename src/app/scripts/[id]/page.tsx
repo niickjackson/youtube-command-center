@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import StatusBadge from '@/components/StatusBadge';
 import type { Script } from '@/lib/types';
 
 export default function ScriptDetailPage() {
@@ -10,6 +9,7 @@ export default function ScriptDetailPage() {
   const router = useRouter();
   const [script, setScript] = useState<Script | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [markingFilmed, setMarkingFilmed] = useState(false);
 
   useEffect(() => {
     fetch(`/api/scripts/${id}`).then(r => {
@@ -29,10 +29,22 @@ export default function ScriptDetailPage() {
       a.download = `${script?.title || 'script'}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      const updated = await fetch(`/api/scripts/${id}`).then(r => r.json());
-      setScript(updated);
     }
     setExporting(false);
+  }
+
+  async function markAsFilmed() {
+    setMarkingFilmed(true);
+    const res = await fetch(`/api/scripts/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'filmed' }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setScript(updated);
+    }
+    setMarkingFilmed(false);
   }
 
   if (!script) {
@@ -51,7 +63,7 @@ export default function ScriptDetailPage() {
   const hasContent = script.chapters.length > 0 && script.chapters.some(ch => ch.sections.length > 0);
 
   return (
-    <div className="app-container pb-8">
+    <div className="app-container pb-24">
       {/* Header */}
       <div className="px-4 pt-4 pb-3">
         <button
@@ -65,21 +77,22 @@ export default function ScriptDetailPage() {
         </button>
         <h1 className="text-xl font-bold text-white leading-tight">{script.title}</h1>
         <div className="flex items-center gap-2.5 mt-2 flex-wrap">
-          <StatusBadge status={script.status} />
-          <span className="text-xs text-white/40">{script.wordCount.toLocaleString()} words</span>
-          <span className="text-xs text-white/40">{script.estimatedRuntime}</span>
-          <span className="text-xs text-white/40">{script.chapterCount} chapters</span>
-        </div>
-
-        {/* Export Button */}
-        <div className="flex gap-2 mt-4">
-          <button
-            onClick={exportPdf}
-            disabled={exporting}
-            className="flex-1 px-4 py-2.5 rounded-xl bg-cyan-accent text-space-black text-sm font-bold hover:bg-cyan-accent/90 active:scale-[0.98] disabled:opacity-50 transition-all cyan-glow"
-          >
-            {exporting ? 'Exporting...' : 'Export PDF'}
-          </button>
+          {script.status === 'filmed' ? (
+            <span className="text-xs font-medium text-emerald-400">&#10003; Filmed</span>
+          ) : script.status === 'writing' ? (
+            <span className="text-xs font-medium text-cyan-accent animate-pulse">Writing...</span>
+          ) : (
+            <span className="text-xs font-medium text-cyan-accent">Ready</span>
+          )}
+          {script.wordCount > 0 && (
+            <span className="text-xs text-white/40">{script.wordCount.toLocaleString()} words</span>
+          )}
+          {script.estimatedRuntime && (
+            <span className="text-xs text-white/40">{script.estimatedRuntime}</span>
+          )}
+          {script.chapterCount > 0 && (
+            <span className="text-xs text-white/40">{script.chapterCount} chapters</span>
+          )}
         </div>
       </div>
 
@@ -147,9 +160,11 @@ export default function ScriptDetailPage() {
           <div className="h-px my-5" style={{ backgroundColor: '#333333' }} />
 
           {/* Stats */}
-          <p className="text-center text-xs" style={{ color: '#888888' }}>
-            {script.wordCount.toLocaleString()} words &nbsp;&bull;&nbsp; {script.estimatedRuntime} &nbsp;&bull;&nbsp; {script.chapterCount} chapters
-          </p>
+          {script.wordCount > 0 && (
+            <p className="text-center text-xs" style={{ color: '#888888' }}>
+              {script.wordCount.toLocaleString()} words &nbsp;&bull;&nbsp; {script.estimatedRuntime} &nbsp;&bull;&nbsp; {script.chapterCount} chapters
+            </p>
+          )}
         </div>
 
         {/* Chapters */}
@@ -199,11 +214,37 @@ export default function ScriptDetailPage() {
           ))
         ) : (
           <div className="p-8 text-center" style={{ backgroundColor: '#111111' }}>
-            <p className="text-white/20 text-sm">No script content yet</p>
-            <p className="text-white/10 text-xs mt-1">Use the API to add chapter content</p>
+            <p className="text-white/20 text-sm">
+              {script.status === 'writing' ? 'Script is being written...' : 'No script content yet'}
+            </p>
           </div>
         )}
       </div>
+
+      {/* Fixed bottom action buttons */}
+      {script.status !== 'writing' && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0a0a0f]/95 backdrop-blur-xl border-t border-white/[0.06]">
+          <div className="mx-auto max-w-[640px] px-4 py-3 flex gap-3">
+            <button
+              onClick={exportPdf}
+              disabled={exporting}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-cyan-accent text-space-black text-sm font-bold hover:bg-cyan-accent/90 active:scale-[0.98] disabled:opacity-50 transition-all cyan-glow"
+            >
+              {exporting ? 'Exporting...' : 'Export PDF'}
+            </button>
+            {script.status !== 'filmed' && (
+              <button
+                onClick={markAsFilmed}
+                disabled={markingFilmed}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-50 transition-all"
+              >
+                {markingFilmed ? 'Marking...' : '✓ Mark as Filmed'}
+              </button>
+            )}
+          </div>
+          <div className="h-safe-bottom bg-[#0a0a0f]/95" />
+        </div>
+      )}
     </div>
   );
 }

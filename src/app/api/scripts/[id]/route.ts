@@ -36,7 +36,7 @@ export async function PATCH(
   const values: InValue[] = [];
 
   if (body.status) {
-    if (!['writing', 'draft', 'final', 'exported'].includes(body.status)) {
+    if (!['writing', 'ready', 'filmed'].includes(body.status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
     updates.push('status = ?');
