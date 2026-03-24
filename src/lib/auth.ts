@@ -20,8 +20,10 @@ function verify(signed: string): string | null {
 }
 
 export async function login(password: string): Promise<boolean> {
-  const hash = process.env.ADMIN_PASSWORD_HASH;
-  if (!hash) return false;
+  // Support base64-encoded hash (avoids $ mangling in env vars)
+  const rawHash = process.env.ADMIN_PASSWORD_HASH;
+  if (!rawHash) return false;
+  const hash = rawHash.startsWith('$2') ? rawHash : Buffer.from(rawHash, 'base64').toString();
   const valid = await bcrypt.compare(password, hash);
   if (!valid) return false;
 
