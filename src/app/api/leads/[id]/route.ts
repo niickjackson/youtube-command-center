@@ -11,8 +11,8 @@ export async function PATCH(
   const body = await req.json();
   const { status } = body;
 
-  if (!status || !['pending', 'approved', 'denied'].includes(status)) {
-    return NextResponse.json({ error: 'Valid status required (pending, approved, denied)' }, { status: 400 });
+  if (!status || !['pending', 'approved', 'denied', 'written'].includes(status)) {
+    return NextResponse.json({ error: 'Valid status required (pending, approved, denied, written)' }, { status: 400 });
   }
 
   const existingResult = await db.execute({ sql: 'SELECT * FROM story_leads WHERE id = ?', args: [id] });

@@ -8,7 +8,7 @@ const HIDE_TAB_BAR = ['/login'];
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const hideTabBar = HIDE_TAB_BAR.includes(pathname) || /^\/scripts\/[^/]+$/.test(pathname);
+  const hideTabBar = HIDE_TAB_BAR.includes(pathname);
 
   return (
     <>

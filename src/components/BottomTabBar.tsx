@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 interface TabCounts {
   pending: number;
   approved: number;
-  scripts: number;
 }
 
 const tabs = [
@@ -32,16 +31,6 @@ const tabs = [
     countKey: 'approved' as const,
   },
   {
-    href: '/scripts',
-    label: 'Scripts',
-    icon: (active: boolean) => (
-      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2 : 1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-    countKey: 'scripts' as const,
-  },
-  {
     href: '/more',
     label: 'More',
     icon: (active: boolean) => (
@@ -55,7 +44,7 @@ const tabs = [
 
 export default function BottomTabBar() {
   const pathname = usePathname();
-  const [counts, setCounts] = useState<TabCounts>({ pending: 0, approved: 0, scripts: 0 });
+  const [counts, setCounts] = useState<TabCounts>({ pending: 0, approved: 0 });
 
   useEffect(() => {
     fetch('/api/analytics')
@@ -64,7 +53,6 @@ export default function BottomTabBar() {
         setCounts({
           pending: data.leads?.pending || 0,
           approved: data.leads?.approved || 0,
-          scripts: data.scripts?.total || 0,
         });
       })
       .catch(() => {});

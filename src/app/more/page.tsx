@@ -5,24 +5,27 @@ import { useRouter } from 'next/navigation';
 import type { StoryLead } from '@/lib/types';
 
 interface Stats {
-  leads: { pending: number; approved: number; denied: number; total: number };
-  scripts: { writing: number; ready: number; filmed: number; total: number };
+  leads: { pending: number; approved: number; denied: number; written: number; total: number };
 }
 
 export default function MorePage() {
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [rejected, setRejected] = useState<StoryLead[]>([]);
+  const [written, setWritten] = useState<StoryLead[]>([]);
   const [showRejected, setShowRejected] = useState(false);
+  const [showWritten, setShowWritten] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       fetch('/api/analytics').then(r => r.json()),
       fetch('/api/leads?status=denied').then(r => r.json()),
-    ]).then(([statsData, rejectedData]) => {
+      fetch('/api/leads?status=written').then(r => r.json()),
+    ]).then(([statsData, rejectedData, writtenData]) => {
       setStats(statsData);
       setRejected(rejectedData);
+      setWritten(writtenData);
       setLoading(false);
     });
   }, []);
@@ -53,7 +56,7 @@ export default function MorePage() {
   }
 
   const approvalRate = stats.leads.total > 0
-    ? Math.round((stats.leads.approved / stats.leads.total) * 100)
+    ? Math.round(((stats.leads.approved + stats.leads.written) / stats.leads.total) * 100)
     : 0;
 
   return (
@@ -81,19 +84,58 @@ export default function MorePage() {
             <p className="text-2xl font-bold text-gold-accent mt-1">{stats.leads.pending}</p>
           </div>
           <div className="glass-card p-4">
-            <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Total Scripts</p>
-            <p className="text-2xl font-bold text-cyan-accent mt-1">{stats.scripts.total}</p>
+            <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Scripts Written</p>
+            <p className="text-2xl font-bold text-cyan-accent mt-1">{stats.leads.written}</p>
           </div>
         </div>
 
-        {/* Script Status Breakdown */}
+        {/* Lead Pipeline Breakdown */}
         <div className="glass-card p-4">
-          <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">Script Pipeline</h3>
+          <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">Lead Pipeline</h3>
           <div className="space-y-2.5">
-            <StatusRow label="Writing" value={stats.scripts.writing} color="bg-cyan-accent" total={stats.scripts.total} />
-            <StatusRow label="Ready" value={stats.scripts.ready} color="bg-blue-400" total={stats.scripts.total} />
-            <StatusRow label="Filmed" value={stats.scripts.filmed} color="bg-emerald-400" total={stats.scripts.total} />
+            <StatusRow label="Pending" value={stats.leads.pending} color="bg-gold-accent" total={stats.leads.total} />
+            <StatusRow label="Approved" value={stats.leads.approved} color="bg-blue-400" total={stats.leads.total} />
+            <StatusRow label="Written" value={stats.leads.written} color="bg-emerald-400" total={stats.leads.total} />
+            <StatusRow label="Denied" value={stats.leads.denied} color="bg-red-400" total={stats.leads.total} />
           </div>
+        </div>
+
+        {/* Written/Completed Archive */}
+        <div className="glass-card overflow-hidden">
+          <button
+            onClick={() => setShowWritten(!showWritten)}
+            className="w-full px-4 py-4 flex items-center justify-between text-left"
+          >
+            <div>
+              <h3 className="text-sm font-semibold text-white">Completed Scripts</h3>
+              <p className="text-xs text-white/40 mt-0.5">{written.length} written leads</p>
+            </div>
+            <svg
+              className={`h-5 w-5 text-white/30 transition-transform ${showWritten ? 'rotate-180' : ''}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showWritten && (
+            <div className="border-t border-white/[0.06]">
+              {written.length === 0 ? (
+                <div className="p-6 text-center">
+                  <p className="text-white/30 text-sm">No completed scripts yet</p>
+                </div>
+              ) : (
+                <div className="max-h-80 overflow-y-auto divide-y divide-white/[0.04]">
+                  {written.map(lead => (
+                    <div key={lead.id} className="px-4 py-3">
+                      <h4 className="text-sm font-medium text-emerald-400/80">{lead.title}</h4>
+                      <p className="text-xs text-white/30 mt-0.5 line-clamp-1">{lead.summary}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Rejected Stories */}

@@ -23,7 +23,7 @@ async function verify(signed: string): Promise<boolean> {
 // Routes that don't need auth
 const publicPaths = ['/login', '/api/auth/login', '/api/auth/logout'];
 // API routes that external agents can access (Orion)
-const agentApiPaths = ['/api/leads', '/api/scripts', '/api/analytics'];
+const agentApiPaths = ['/api/leads', '/api/analytics'];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

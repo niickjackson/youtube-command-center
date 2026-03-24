@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import StatusBadge from '@/components/StatusBadge';
 import type { StoryLead } from '@/lib/types';
 
 const categoryColors: Record<string, string> = {
@@ -79,7 +78,6 @@ export default function PendingPage() {
                     </span>
                     <span className="text-white/20">&#8226;</span>
                     <span className="text-xs text-white/40">Tier {lead.tier}</span>
-                    <StatusBadge status={lead.status} />
                   </div>
                 </div>
               </div>
