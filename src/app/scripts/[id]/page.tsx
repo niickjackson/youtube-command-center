@@ -96,31 +96,31 @@ export default function ScriptDetailPage() {
         </div>
       </div>
 
-      {/* Script Preview — PDF-style dark view */}
-      <div className="mx-4 rounded-xl overflow-hidden border border-white/[0.06]">
+      {/* Script Preview — PDF-style dark cinematic view */}
+      <div className="mx-4 rounded-xl overflow-hidden border border-white/[0.08]" style={{ boxShadow: '0 0 40px rgba(0,0,0,0.5)' }}>
         {/* Cover Section */}
-        <div className="p-6" style={{ backgroundColor: '#111111' }}>
-          <h2 className="text-xl font-bold uppercase tracking-wide" style={{ color: '#00D4FF' }}>
+        <div className="px-7 py-8" style={{ backgroundColor: '#111111' }}>
+          <h2 className="text-2xl font-bold uppercase tracking-wide" style={{ color: '#00D4FF' }}>
             {script.title}
           </h2>
-          <div className="h-0.5 mt-2 mb-5" style={{ backgroundColor: '#00D4FF' }} />
+          <div className="h-[2px] mt-3 mb-6" style={{ backgroundColor: '#00D4FF' }} />
 
           {/* Title Options */}
           {script.titleOptions.length > 0 && (
-            <div className="mb-5">
-              <h3 className="text-xs font-bold text-white/80 mb-2.5 uppercase tracking-wider">Title Options</h3>
+            <div className="mb-6">
+              <h3 className="text-xs font-bold text-white/80 mb-3 uppercase tracking-wider">Title Options</h3>
               {script.titleOptions.map((opt, i) => (
-                <div key={i} className="flex items-baseline justify-between mb-1.5">
+                <div key={i} className="flex items-baseline justify-between mb-2">
                   <span className="text-sm text-white/90">
                     {i + 1}. {opt.title}
                   </span>
-                  <span className="text-[10px] ml-2 flex-shrink-0" style={{ color: '#888888' }}>
+                  <span className="text-[11px] ml-3 flex-shrink-0" style={{ color: '#888888' }}>
                     ({opt.charCount} chars)
                   </span>
                 </div>
               ))}
               {script.titleOptions[0]?.pattern && (
-                <p className="text-[11px] italic mt-2" style={{ color: '#888888' }}>
+                <p className="text-xs italic mt-2.5" style={{ color: '#888888' }}>
                   Pattern: {script.titleOptions[0].pattern}
                 </p>
               )}
@@ -129,39 +129,39 @@ export default function ScriptDetailPage() {
 
           {/* Thumbnail Direction */}
           {(script.thumbnailDirection.text || script.thumbnailDirection.visual) && (
-            <div className="mb-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider mb-2.5" style={{ color: '#FFD54F' }}>
+            <div className="mb-6">
+              <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#FFD54F' }}>
                 Thumbnail Direction
               </h3>
               {script.thumbnailDirection.text && (
-                <p className="text-sm text-white/70 mb-1">
-                  <span style={{ color: '#666' }}>Text: </span>{script.thumbnailDirection.text}
+                <p className="text-sm text-white/70 mb-1.5">
+                  <span style={{ color: '#666666' }}>Text: </span>{script.thumbnailDirection.text}
                 </p>
               )}
               {script.thumbnailDirection.visual && (
-                <p className="text-sm text-white/70 mb-1">
-                  <span style={{ color: '#666' }}>Visual: </span>{script.thumbnailDirection.visual}
+                <p className="text-sm text-white/70 mb-1.5">
+                  <span style={{ color: '#666666' }}>Visual: </span>{script.thumbnailDirection.visual}
                 </p>
               )}
               {script.thumbnailDirection.optional && (
-                <p className="text-sm text-white/70 mb-1">
-                  <span style={{ color: '#666' }}>Optional: </span>{script.thumbnailDirection.optional}
+                <p className="text-sm text-white/70 mb-1.5">
+                  <span style={{ color: '#666666' }}>Optional: </span>{script.thumbnailDirection.optional}
                 </p>
               )}
               {script.thumbnailDirection.remember && (
-                <p className="text-sm text-white/70 mb-1">
-                  <span style={{ color: '#666' }}>Remember: </span>{script.thumbnailDirection.remember}
+                <p className="text-sm text-white/70 mb-1.5">
+                  <span style={{ color: '#666666' }}>Remember: </span>{script.thumbnailDirection.remember}
                 </p>
               )}
             </div>
           )}
 
           {/* Separator */}
-          <div className="h-px my-5" style={{ backgroundColor: '#333333' }} />
+          <div className="h-px my-6" style={{ backgroundColor: '#333333' }} />
 
           {/* Stats */}
           {script.wordCount > 0 && (
-            <p className="text-center text-xs" style={{ color: '#888888' }}>
+            <p className="text-center text-xs tracking-wide" style={{ color: '#888888' }}>
               {script.wordCount.toLocaleString()} words &nbsp;&bull;&nbsp; {script.estimatedRuntime} &nbsp;&bull;&nbsp; {script.chapterCount} chapters
             </p>
           )}
@@ -170,41 +170,41 @@ export default function ScriptDetailPage() {
         {/* Chapters */}
         {hasContent ? (
           script.chapters.map((chapter, ci) => (
-            <div key={ci} className="p-6 border-t border-white/[0.06]" style={{ backgroundColor: '#111111' }}>
+            <div key={ci} className="px-7 py-6" style={{ backgroundColor: '#111111', borderTop: '2px solid #222222' }}>
               {/* Chapter heading */}
-              <h3 className="text-base font-bold" style={{ color: '#00D4FF' }}>
+              <h3 className="text-lg font-bold uppercase tracking-wide" style={{ color: '#00D4FF', fontSize: '16pt' }}>
                 {chapter.name}
                 {chapter.timestamp && (
-                  <span className="ml-2 text-xs font-normal opacity-70" style={{ color: '#00D4FF' }}>
+                  <span className="ml-2 text-xs font-normal" style={{ color: '#00D4FF', opacity: 0.6 }}>
                     [{chapter.timestamp}]
                   </span>
                 )}
               </h3>
-              <div className="h-px mt-2 mb-4" style={{ backgroundColor: '#00D4FF' }} />
+              <div className="h-[2px] mt-2 mb-5" style={{ backgroundColor: '#00D4FF', opacity: 0.7 }} />
 
               {chapter.sections.map((section, si) => (
-                <div key={si} className="mb-5">
+                <div key={si} className={si > 0 ? 'mt-7' : ''}>
                   {/* Delivery marker */}
                   {section.type === 'voice_over' ? (
-                    <p className="text-xs font-bold mb-2.5" style={{ color: '#80DEEA' }}>
+                    <p className="text-sm font-bold mb-3 mt-5" style={{ color: '#80DEEA', letterSpacing: '0.05em' }}>
                       &#9654; VOICE-OVER
                     </p>
                   ) : (
-                    <p className="text-xs font-bold mb-2.5" style={{ color: '#FFD54F' }}>
+                    <p className="text-sm font-bold mb-3 mt-5" style={{ color: '#FFD54F', letterSpacing: '0.05em' }}>
                       &#9654; ON-CAMERA
                     </p>
                   )}
 
                   {/* Script text */}
                   {section.text.split('\n\n').filter(p => p.trim()).map((para, pi) => (
-                    <p key={pi} className="text-white text-sm leading-relaxed mb-2.5">
+                    <p key={pi} className="mb-3" style={{ color: '#FFFFFF', fontSize: '15px', lineHeight: '1.75' }}>
                       {para.trim()}
                     </p>
                   ))}
 
                   {/* Editor notes */}
                   {section.editorNotes?.map((note, ni) => (
-                    <p key={ni} className="text-[11px] italic mt-2" style={{ color: '#666666' }}>
+                    <p key={ni} className="italic mt-3" style={{ color: '#666666', fontSize: '12px', lineHeight: '1.5' }}>
                       EDITOR: {note}
                     </p>
                   ))}
@@ -213,7 +213,7 @@ export default function ScriptDetailPage() {
             </div>
           ))
         ) : (
-          <div className="p-8 text-center" style={{ backgroundColor: '#111111' }}>
+          <div className="p-10 text-center" style={{ backgroundColor: '#111111' }}>
             <p className="text-white/20 text-sm">
               {script.status === 'writing' ? 'Script is being written...' : 'No script content yet'}
             </p>
