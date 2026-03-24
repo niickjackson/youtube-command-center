@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { ScriptRow, rowToScript } from '@/lib/types';
 import { generatePDF } from '@/lib/pdf';
 
@@ -7,8 +7,10 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const db = await getDb();
   const { id } = await params;
-  const row = db.prepare('SELECT * FROM scripts WHERE id = ?').get(id) as ScriptRow | undefined;
+  const result = await db.execute({ sql: 'SELECT * FROM scripts WHERE id = ?', args: [id] });
+  const row = result.rows[0] as unknown as ScriptRow | undefined;
 
   if (!row) {
     return NextResponse.json({ error: 'Script not found' }, { status: 404 });
@@ -18,7 +20,7 @@ export async function POST(
   const pdfBuffer = generatePDF(script);
 
   // Update status to exported
-  db.prepare("UPDATE scripts SET status = 'exported', exported_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(id);
+  await db.execute({ sql: "UPDATE scripts SET status = 'exported', exported_at = datetime('now'), updated_at = datetime('now') WHERE id = ?", args: [id] });
 
   return new NextResponse(new Uint8Array(pdfBuffer), {
     headers: {

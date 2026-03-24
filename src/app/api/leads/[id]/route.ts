@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { StoryLeadRow, rowToLead } from '@/lib/types';
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const db = await getDb();
   const { id } = await params;
   const body = await req.json();
   const { status } = body;
@@ -14,13 +15,14 @@ export async function PATCH(
     return NextResponse.json({ error: 'Valid status required (pending, approved, denied)' }, { status: 400 });
   }
 
-  const existing = db.prepare('SELECT * FROM story_leads WHERE id = ?').get(id) as StoryLeadRow | undefined;
-  if (!existing) {
+  const existingResult = await db.execute({ sql: 'SELECT * FROM story_leads WHERE id = ?', args: [id] });
+  if (!existingResult.rows[0]) {
     return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
   }
 
-  db.prepare('UPDATE story_leads SET status = ?, updated_at = datetime(\'now\') WHERE id = ?').run(status, id);
+  await db.execute({ sql: "UPDATE story_leads SET status = ?, updated_at = datetime('now') WHERE id = ?", args: [status, id] });
 
-  const row = db.prepare('SELECT * FROM story_leads WHERE id = ?').get(id) as StoryLeadRow;
+  const result = await db.execute({ sql: 'SELECT * FROM story_leads WHERE id = ?', args: [id] });
+  const row = result.rows[0] as unknown as StoryLeadRow;
   return NextResponse.json(rowToLead(row));
 }

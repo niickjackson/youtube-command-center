@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { ScriptRow, rowToScript } from '@/lib/types';
+import type { InValue } from '@libsql/client';
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const db = await getDb();
   const { id } = await params;
-  const row = db.prepare('SELECT * FROM scripts WHERE id = ?').get(id) as ScriptRow | undefined;
+  const result = await db.execute({ sql: 'SELECT * FROM scripts WHERE id = ?', args: [id] });
+  const row = result.rows[0] as unknown as ScriptRow | undefined;
 
   if (!row) {
     return NextResponse.json({ error: 'Script not found' }, { status: 404 });
@@ -20,16 +23,17 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const db = await getDb();
   const { id } = await params;
   const body = await req.json();
 
-  const existing = db.prepare('SELECT * FROM scripts WHERE id = ?').get(id) as ScriptRow | undefined;
-  if (!existing) {
+  const existingResult = await db.execute({ sql: 'SELECT * FROM scripts WHERE id = ?', args: [id] });
+  if (!existingResult.rows[0]) {
     return NextResponse.json({ error: 'Script not found' }, { status: 404 });
   }
 
   const updates: string[] = [];
-  const values: unknown[] = [];
+  const values: InValue[] = [];
 
   if (body.status) {
     if (!['writing', 'draft', 'final', 'exported'].includes(body.status)) {
@@ -55,8 +59,9 @@ export async function PATCH(
   updates.push("updated_at = datetime('now')");
   values.push(id);
 
-  db.prepare(`UPDATE scripts SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+  await db.execute({ sql: `UPDATE scripts SET ${updates.join(', ')} WHERE id = ?`, args: values });
 
-  const row = db.prepare('SELECT * FROM scripts WHERE id = ?').get(id) as ScriptRow;
+  const result = await db.execute({ sql: 'SELECT * FROM scripts WHERE id = ?', args: [id] });
+  const row = result.rows[0] as unknown as ScriptRow;
   return NextResponse.json(rowToScript(row));
 }
